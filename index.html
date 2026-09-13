@@ -30,9 +30,13 @@
 <div class="tabs"><div class="tab active" data-tab="explore">Explore</div><div class="tab" data-tab="create">Create</div></div>
 <div id="explore"><div class="row" style="margin-bottom:12px;"><div class="muted">Contract: <span id="contractAddrLabel">not configured</span></div><button class="btn-secondary" id="refreshBtn">Refresh</button></div><div id="tokenList"></div></div>
 <div id="create" style="display:none"><div class="card"><h3 style="margin-top:0">Launch a fixed-supply token</h3>
+<div class="muted">Launch fee: 0.0005 ETH · Trade fee: 1% (0.7% creator / 0.3% protocol) · Graduates at 4.2 ETH raised</div>
 <label>Name</label><input id="c_name" placeholder="My Token"><label>Symbol</label><input id="c_symbol" placeholder="MTK">
-<div class="grid2"><div><label>Total Supply</label><input id="c_total" placeholder="1000000"></div><div><label>Curve Supply (sold via bonding curve)</label><input id="c_curve" placeholder="800000"></div></div>
+<div class="grid2"><div><label>Total Supply</label><input id="c_total" placeholder="1000000000" value="1000000000"></div><div><label>Curve Supply (sold via bonding curve)</label><input id="c_curve" placeholder="800000000" value="800000000"></div></div>
 <div class="grid2"><div><label>Base Price (wei per token)</label><input id="c_base" placeholder="1000000000000"></div><div><label>Slope (wei increase per token sold)</label><input id="c_slope" placeholder="1000"></div></div>
+<label>X (Twitter) link <span class="muted">(optional)</span></label><input id="c_x" placeholder="https://x.com/yourproject">
+<label>Telegram link <span class="muted">(optional)</span></label><input id="c_telegram" placeholder="https://t.me/yourproject">
+<label>Website link <span class="muted">(optional)</span></label><input id="c_website" placeholder="https://yourproject.xyz">
 <button class="btn-primary" style="margin-top:16px;width:100%" id="createBtn">Deploy Token</button><div id="createStatus" class="muted" style="margin-top:8px"></div>
 </div></div><div id="status"></div>
 </main>
@@ -44,14 +48,17 @@ const CONFIG={
 };
 const ABI=[
 "function tokenCount() view returns (uint256)",
-"function getToken(uint256) view returns (tuple(address token,address creator,uint256 curveSupply,uint256 sold,uint256 reserveBalance,uint256 basePrice,uint256 slope,bool graduated))",
+"function getToken(uint256) view returns (tuple(address token,address creator,uint256 curveSupply,uint256 sold,uint256 reserveBalance,uint256 basePrice,uint256 slope,bool graduated,string xUrl,string telegramUrl,string websiteUrl))",
 "function currentPrice(uint256) view returns (uint256)",
 "function quoteBuy(uint256,uint256) view returns (uint256)",
 "function quoteSell(uint256,uint256) view returns (uint256)",
-"function createToken(string,string,uint256,uint256,uint256,uint256) returns (uint256,address)",
+"function createToken(string,string,uint256,uint256,uint256,uint256,string,string,string) payable returns (uint256,address)",
+"function updateSocialLinks(uint256,string,string,string)",
 "function buy(uint256,uint256,uint256) payable",
 "function sell(uint256,uint256,uint256)",
-"event TokenCreated(uint256 indexed tokenId,address indexed token,address indexed creator,string name,string symbol,uint256 totalSupply)"
+"event TokenCreated(uint256 indexed tokenId,address indexed token,address indexed creator,string name,string symbol,uint256 totalSupply)",
+"event Buy(uint256 indexed tokenId,address indexed buyer,uint256 amountTokens,uint256 costWei)",
+"event Sell(uint256 indexed tokenId,address indexed seller,uint256 amountTokens,uint256 payoutWei)"
 ];
 const ERC20_ABI=["function approve(address,uint256) returns (bool)","function balanceOf(address) view returns (uint256)","function allowance(address,address) view returns (uint256)"];
 let provider,signer,contract,userAddress;
@@ -109,14 +116,94 @@ async function loadTokens(){
  const listEl=document.getElementById("tokenList");listEl.innerHTML='<div class="muted">Loading tokens...</div>';
  try{
   const count=await contract.tokenCount();let html="";
-  for(let i=0;i<Number(count);i++){const info=await contract.getToken(i);const price=await contract.currentPrice(i);html+=renderTokenCard(i,info,price)}
+  for(let i=0;i<Number(count);i++){
+   const info=await contract.getToken(i);
+   const price=await contract.currentPrice(i);
+   const history=await fetchPriceHistory(i);
+   html+=renderTokenCard(i,info,price,history);
+  }
   listEl.innerHTML=html||'<div class="muted">No tokens launched yet. Be the first — go to Create.</div>';attachTradeHandlers();
  }catch(err){console.error(err);listEl.innerHTML='<div class="muted">Could not load tokens. Check the contract address and Sepolia network.</div>'}
 }
-function renderTokenCard(id,info,price){
+async function fetchPriceHistory(tokenId){
+ try{
+  const [buys,sells]=await Promise.all([
+   contract.queryFilter(contract.filters.Buy(tokenId)),
+   contract.queryFilter(contract.filters.Sell(tokenId))
+  ]);
+  const trades=[
+   ...buys.map(e=>({block:e.blockNumber,idx:e.index??0,amount:e.args.amountTokens,value:e.args.costWei})),
+   ...sells.map(e=>({block:e.blockNumber,idx:e.index??0,amount:e.args.amountTokens,value:e.args.payoutWei}))
+  ];
+  trades.sort((a,b)=>a.block-b.block||a.idx-b.idx);
+  return trades.map(t=>{
+   const amt=Number(ethers.formatUnits(t.amount,18));
+   const val=Number(ethers.formatEther(t.value));
+   return amt>0?val/amt:0;
+  }).filter(p=>isFinite(p)&&p>0);
+ }catch(err){console.error("Could not fetch trade history for token",tokenId,err);return []}
+}
+function escapeHtml(s){return (s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderSocialLinks(info){
+ const links=[];
+ if(info.xUrl) links.push(`<a href="${escapeHtml(info.xUrl)}" target="_blank" rel="noopener noreferrer">X</a>`);
+ if(info.telegramUrl) links.push(`<a href="${escapeHtml(info.telegramUrl)}" target="_blank" rel="noopener noreferrer">Telegram</a>`);
+ if(info.websiteUrl) links.push(`<a href="${escapeHtml(info.websiteUrl)}" target="_blank" rel="noopener noreferrer">Website</a>`);
+ return links.length?`<div class="muted" style="margin-top:6px;display:flex;gap:14px">${links.join("")}</div>`:"";
+}
+function bondingCurveSvg(info){
+ const curveSupply=Number(ethers.formatUnits(info.curveSupply,18));
+ const sold=Number(ethers.formatUnits(info.sold,18));
+ const basePrice=Number(info.basePrice);
+ const slope=Number(info.slope);
+ if(!curveSupply||!isFinite(curveSupply)) return "";
+ const w=100,h=48,pad=2,N=30;
+ let points=[],minP=Infinity,maxP=-Infinity;
+ for(let i=0;i<=N;i++){
+  const x=curveSupply*i/N;const p=basePrice+slope*x;
+  if(p<minP)minP=p;if(p>maxP)maxP=p;
+  points.push([x,p]);
+ }
+ const range=(maxP-minP)||1;
+ const toXY=([x,p])=>{
+  const px=pad+(x/curveSupply)*(w-2*pad);
+  const py=h-pad-((p-minP)/range)*(h-2*pad);
+  return `${px.toFixed(1)},${py.toFixed(1)}`;
+ };
+ const polyline=points.map(toXY).join(" ");
+ const soldClamped=Math.min(sold,curveSupply);
+ const soldX=(pad+(soldClamped/curveSupply)*(w-2*pad)).toFixed(1);
+ return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:48px;margin-top:8px;display:block">
+  <polyline points="${polyline}" fill="none" stroke="#7c5cff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+  <line x1="${soldX}" y1="0" x2="${soldX}" y2="${h}" stroke="#3ddc84" stroke-width="1" stroke-dasharray="2,2" vector-effect="non-scaling-stroke"/>
+ </svg>`;
+}
+function priceHistorySvg(history){
+ const w=100,h=48,pad=2;
+ let minP=Math.min(...history),maxP=Math.max(...history);
+ if(minP===maxP){minP*=0.95;maxP=maxP*1.05||1}
+ const range=(maxP-minP)||1,N=history.length-1;
+ const points=history.map((p,i)=>{
+  const px=pad+(N>0?i/N:0)*(w-2*pad);
+  const py=h-pad-((p-minP)/range)*(h-2*pad);
+  return `${px.toFixed(1)},${py.toFixed(1)}`;
+ }).join(" ");
+ return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:48px;margin-top:4px;display:block">
+  <polyline points="${points}" fill="none" stroke="#3ddc84" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+ </svg>`;
+}
+function renderChart(info,history){
+ if(history&&history.length>=2){
+  return `<div class="muted" style="margin-top:6px">Price history · ${history.length} trades</div>${priceHistorySvg(history)}`;
+ }
+ return `<div class="muted" style="margin-top:6px">No trades yet — projected curve</div>${bondingCurveSvg(info)}`;
+}
+function renderTokenCard(id,info,price,history){
  const pct=info.curveSupply>0n?Number(info.sold*10000n/info.curveSupply)/100:0;
  return `<div class="card"><div class="row"><div><strong>#${id} — ${info.token.slice(0,6)}...${info.token.slice(-4)}</strong> <span class="pill ${info.graduated?"graduated":""}">${info.graduated?"Graduated":"On curve"}</span></div><div class="muted">${ethers.formatEther(price)} native / token</div></div>
  <div class="muted" style="margin-top:6px">Sold ${pct}% of curve supply · Reserve ${ethers.formatEther(info.reserveBalance)}</div>
+ ${renderChart(info,history)}
+ ${renderSocialLinks(info)}
  <div class="grid2" style="margin-top:12px"><div><input type="text" class="amt-buy" data-id="${id}" placeholder="Amount to buy"><button class="btn-green trade-buy" data-id="${id}" style="width:100%;margin-top:6px">Buy</button></div>
  <div><input type="text" class="amt-sell" data-id="${id}" placeholder="Amount to sell"><button class="btn-red trade-sell" data-id="${id}" style="width:100%;margin-top:6px">Sell</button></div></div></div>`;
 }
@@ -141,11 +228,11 @@ async function sellToken(id){
  }catch(err){console.error(err);setStatus("Sell failed: "+(err.shortMessage||err.message||err))}
 }
 async function createToken(){
- const name=document.getElementById("c_name").value.trim(),symbol=document.getElementById("c_symbol").value.trim(),total=document.getElementById("c_total").value.trim(),curve=document.getElementById("c_curve").value.trim(),base=document.getElementById("c_base").value.trim(),slope=document.getElementById("c_slope").value.trim(),statusEl2=document.getElementById("createStatus");
+ const name=document.getElementById("c_name").value.trim(),symbol=document.getElementById("c_symbol").value.trim(),total=document.getElementById("c_total").value.trim(),curve=document.getElementById("c_curve").value.trim(),base=document.getElementById("c_base").value.trim(),slope=document.getElementById("c_slope").value.trim(),xUrl=document.getElementById("c_x").value.trim(),telegramUrl=document.getElementById("c_telegram").value.trim(),websiteUrl=document.getElementById("c_website").value.trim(),statusEl2=document.getElementById("createStatus");
  if(!contract){statusEl2.textContent="Connect your wallet first.";return}
  if(!name||!symbol||!total||!curve||!base||!slope){statusEl2.textContent="Fill in every field.";return}
  try{statusEl2.textContent="Confirm the transaction in your wallet...";
- const tx=await contract.createToken(name,symbol,ethers.parseUnits(total,18),ethers.parseUnits(curve,18),BigInt(base),BigInt(slope));
+ const tx=await contract.createToken(name,symbol,ethers.parseUnits(total,18),ethers.parseUnits(curve,18),BigInt(base),BigInt(slope),xUrl,telegramUrl,websiteUrl,{value:ethers.parseEther("0.0005")});
  statusEl2.textContent="Waiting for confirmation...";await tx.wait();statusEl2.textContent="Token launched!";document.querySelector('.tab[data-tab="explore"]').click();loadTokens()
  }catch(err){console.error(err);statusEl2.textContent="Launch failed: "+(err.shortMessage||err.message||err)}
 }
