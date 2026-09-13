@@ -147,7 +147,7 @@ async function createToken(){
  try{statusEl2.textContent="Confirm the transaction in your wallet...";
  const tx=await contract.createToken(name,symbol,ethers.parseUnits(total,18),ethers.parseUnits(curve,18),BigInt(base),BigInt(slope));
  statusEl2.textContent="Waiting for confirmation...";await tx.wait();statusEl2.textContent="Token launched!";document.querySelector('.tab[data-tab="explore"]').click();loadTokens()
- }catch(err){console.error(err);statusEl2.textContent="Launch failed: "+(err.shortMessage||err.message||err))}
+ }catch(err){console.error(err);statusEl2.textContent="Launch failed: "+(err.shortMessage||err.message||err)}
 }
 window.addEventListener("load",()=>{
  if(window.ethereum){
