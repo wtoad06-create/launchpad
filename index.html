@@ -6,324 +6,154 @@
 <title>launchpad</title>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
 <style>
-  :root{
-    --bg:#0a0a0a; --panel:#141414; --border:#262626; --text:#f2f2f2; --muted:#8a8a8a;
-    --accent:#7c5cff; --green:#3ddc84; --red:#ff5c5c;
-  }
-  *{box-sizing:border-box;}
-  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0;}
-  header{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;border-bottom:1px solid var(--border);}
-  header h1{font-size:18px;margin:0;letter-spacing:.5px;}
-  header h1 span{color:var(--accent);}
-  button{cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;}
-  .btn-primary{background:var(--accent);color:white;}
-  .btn-secondary{background:var(--panel);color:var(--text);border:1px solid var(--border);}
-  .btn-green{background:var(--green);color:#04210f;}
-  .btn-red{background:var(--red);color:#2a0000;}
-  main{max-width:960px;margin:0 auto;padding:28px;}
-  .tabs{display:flex;gap:8px;margin-bottom:20px;}
-  .tab{padding:8px 14px;border-radius:8px;color:var(--muted);cursor:pointer;font-size:14px;}
-  .tab.active{background:var(--panel);color:var(--text);border:1px solid var(--border);}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;}
-  .row{display:flex;justify-content:space-between;align-items:center;gap:12px;}
-  .muted{color:var(--muted);font-size:13px;}
-  input{width:100%;background:#0f0f0f;border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;margin-top:6px;font-size:14px;}
-  label{font-size:13px;color:var(--muted);display:block;margin-top:12px;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  #status{font-size:13px;color:var(--muted);margin-top:10px;min-height:18px;}
-  .pill{font-size:11px;padding:3px 8px;border-radius:20px;background:#1f1f1f;color:var(--muted);}
-  .pill.graduated{background:#0f2e1c;color:var(--green);}
-  a{color:var(--accent);text-decoration:none;}
+  :root{--bg:#0a0a0a;--panel:#141414;--border:#262626;--text:#f2f2f2;--muted:#8a8a8a;--accent:#7c5cff;--green:#3ddc84;--red:#ff5c5c;}
+  *{box-sizing:border-box} body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:0}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;border-bottom:1px solid var(--border)}
+  header h1{font-size:18px;margin:0;letter-spacing:.5px} header h1 span{color:var(--accent)}
+  button{cursor:pointer;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600}
+  button:disabled{opacity:.6;cursor:not-allowed}.btn-primary{background:var(--accent);color:white}.btn-secondary{background:var(--panel);color:var(--text);border:1px solid var(--border)}
+  .btn-green{background:var(--green);color:#04210f}.btn-red{background:var(--red);color:#2a0000}
+  main{max-width:960px;margin:0 auto;padding:28px}.tabs{display:flex;gap:8px;margin-bottom:20px}
+  .tab{padding:8px 14px;border-radius:8px;color:var(--muted);cursor:pointer;font-size:14px}.tab.active{background:var(--panel);color:var(--text);border:1px solid var(--border)}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:12px}.muted{color:var(--muted);font-size:13px}
+  input{width:100%;background:#0f0f0f;border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;margin-top:6px;font-size:14px}
+  label{font-size:13px;color:var(--muted);display:block;margin-top:12px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  #status{font-size:13px;color:var(--muted);margin-top:10px;min-height:18px}.pill{font-size:11px;padding:3px 8px;border-radius:20px;background:#1f1f1f;color:var(--muted)}
+  .pill.graduated{background:#0f2e1c;color:var(--green)}a{color:var(--accent);text-decoration:none}
+  @media(max-width:640px){header{padding:16px}main{padding:18px}.grid2{grid-template-columns:1fr}.row{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-
-<header>
-  <h1>launch<span>pad</span></h1>
-  <button id="connectBtn" class="btn-primary">Connect Wallet</button>
-</header>
-
+<header><h1>launch<span>pad</span></h1><button id="connectBtn" class="btn-primary">Connect Wallet</button></header>
 <main>
-  <div class="tabs">
-    <div class="tab active" data-tab="explore">Explore</div>
-    <div class="tab" data-tab="create">Create</div>
-  </div>
-
-  <div id="explore">
-    <div class="row" style="margin-bottom:12px;">
-      <div class="muted">Contract: <span id="contractAddrLabel">not configured</span></div>
-      <button class="btn-secondary" id="refreshBtn">Refresh</button>
-    </div>
-    <div id="tokenList"></div>
-  </div>
-
-  <div id="create" style="display:none;">
-    <div class="card">
-      <h3 style="margin-top:0;">Launch a fixed-supply token</h3>
-      <label>Name</label>
-      <input id="c_name" placeholder="My Token" />
-      <label>Symbol</label>
-      <input id="c_symbol" placeholder="MTK" />
-      <div class="grid2">
-        <div>
-          <label>Total Supply</label>
-          <input id="c_total" placeholder="1000000" />
-        </div>
-        <div>
-          <label>Curve Supply (sold via bonding curve)</label>
-          <input id="c_curve" placeholder="800000" />
-        </div>
-      </div>
-      <div class="grid2">
-        <div>
-          <label>Base Price (wei per token)</label>
-          <input id="c_base" placeholder="1000000000000" />
-        </div>
-        <div>
-          <label>Slope (wei increase per token sold)</label>
-          <input id="c_slope" placeholder="1000" />
-        </div>
-      </div>
-      <button class="btn-primary" style="margin-top:16px;width:100%;" id="createBtn">Deploy Token</button>
-      <div id="createStatus" class="muted" style="margin-top:8px;"></div>
-    </div>
-  </div>
-
-  <div id="status"></div>
+<div class="tabs"><div class="tab active" data-tab="explore">Explore</div><div class="tab" data-tab="create">Create</div></div>
+<div id="explore"><div class="row" style="margin-bottom:12px;"><div class="muted">Contract: <span id="contractAddrLabel">not configured</span></div><button class="btn-secondary" id="refreshBtn">Refresh</button></div><div id="tokenList"></div></div>
+<div id="create" style="display:none"><div class="card"><h3 style="margin-top:0">Launch a fixed-supply token</h3>
+<label>Name</label><input id="c_name" placeholder="My Token"><label>Symbol</label><input id="c_symbol" placeholder="MTK">
+<div class="grid2"><div><label>Total Supply</label><input id="c_total" placeholder="1000000"></div><div><label>Curve Supply (sold via bonding curve)</label><input id="c_curve" placeholder="800000"></div></div>
+<div class="grid2"><div><label>Base Price (wei per token)</label><input id="c_base" placeholder="1000000000000"></div><div><label>Slope (wei increase per token sold)</label><input id="c_slope" placeholder="1000"></div></div>
+<button class="btn-primary" style="margin-top:16px;width:100%" id="createBtn">Deploy Token</button><div id="createStatus" class="muted" style="margin-top:8px"></div>
+</div></div><div id="status"></div>
 </main>
-
 <script>
-/* ============================================================
-   CONFIG — fill these in after you deploy Launchpad.sol
-   ============================================================ */
-const CONFIG = {
-  CONTRACT_ADDRESS: "0x45583cC59d6F99B715E4D41E2305F34cb6831510",
-  // Sepolia Testnet: chain ID 11155111 -> 0xaa36a7
-  CHAIN_ID_HEX: "0xaa36a7",
-  RPC_URL: "https://rpc.sepolia.org",
+const CONFIG={
+  CONTRACT_ADDRESS:"0x45583cC59d6F99B715E4D41E2305F34cb6831510",
+  CHAIN_ID_HEX:"0xaa36a7",
+  RPC_URL:"https://rpc.sepolia.org"
 };
-
-const ABI = [
-  "function tokenCount() view returns (uint256)",
-  "function getToken(uint256) view returns (tuple(address token,address creator,uint256 curveSupply,uint256 sold,uint256 reserveBalance,uint256 basePrice,uint256 slope,bool graduated))",
-  "function currentPrice(uint256) view returns (uint256)",
-  "function quoteBuy(uint256,uint256) view returns (uint256)",
-  "function quoteSell(uint256,uint256) view returns (uint256)",
-  "function createToken(string,string,uint256,uint256,uint256,uint256) returns (uint256,address)",
-  "function buy(uint256,uint256,uint256) payable",
-  "function sell(uint256,uint256,uint256)",
-  "event TokenCreated(uint256 indexed tokenId,address indexed token,address indexed creator,string name,string symbol,uint256 totalSupply)"
+const ABI=[
+"function tokenCount() view returns (uint256)",
+"function getToken(uint256) view returns (tuple(address token,address creator,uint256 curveSupply,uint256 sold,uint256 reserveBalance,uint256 basePrice,uint256 slope,bool graduated))",
+"function currentPrice(uint256) view returns (uint256)",
+"function quoteBuy(uint256,uint256) view returns (uint256)",
+"function quoteSell(uint256,uint256) view returns (uint256)",
+"function createToken(string,string,uint256,uint256,uint256,uint256) returns (uint256,address)",
+"function buy(uint256,uint256,uint256) payable",
+"function sell(uint256,uint256,uint256)",
+"event TokenCreated(uint256 indexed tokenId,address indexed token,address indexed creator,string name,string symbol,uint256 totalSupply)"
 ];
-
-const ERC20_ABI = [
-  "function approve(address,uint256) returns (bool)",
-  "function balanceOf(address) view returns (uint256)",
-  "function allowance(address,address) view returns (uint256)"
-];
-
-let provider, signer, contract, userAddress;
-
-const statusEl = document.getElementById('status');
-function setStatus(msg){ statusEl.textContent = msg || ''; }
-
-document.getElementById('contractAddrLabel').textContent = CONFIG.CONTRACT_ADDRESS;
-
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('explore').style.display = tab.dataset.tab==='explore' ? 'block':'none';
-    document.getElementById('create').style.display = tab.dataset.tab==='create' ? 'block':'none';
-  });
-});
-
-document.getElementById('connectBtn').addEventListener('click', connectWallet);
-document.getElementById('refreshBtn').addEventListener('click', loadTokens);
-document.getElementById('createBtn').addEventListener('click', createToken);
+const ERC20_ABI=["function approve(address,uint256) returns (bool)","function balanceOf(address) view returns (uint256)","function allowance(address,address) view returns (uint256)"];
+let provider,signer,contract,userAddress;
+const statusEl=document.getElementById("status");
+function setStatus(msg){statusEl.textContent=msg||""}
+document.getElementById("contractAddrLabel").textContent=CONFIG.CONTRACT_ADDRESS;
+document.querySelectorAll(".tab").forEach(tab=>tab.addEventListener("click",()=>{
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));tab.classList.add("active");
+ document.getElementById("explore").style.display=tab.dataset.tab==="explore"?"block":"none";
+ document.getElementById("create").style.display=tab.dataset.tab==="create"?"block":"none";
+}));
+document.getElementById("connectBtn").addEventListener("click",connectWallet);
+document.getElementById("refreshBtn").addEventListener("click",loadTokens);
+document.getElementById("createBtn").addEventListener("click",createToken);
 
 async function connectWallet(){
-  if(!window.ethereum){
-    setStatus('No wallet found. Install MetaMask or another injected wallet extension.');
-    return;
+ const btn=document.getElementById("connectBtn");
+ if(!window.ethereum){setStatus("MetaMask not detected. Install MetaMask and open this site in a MetaMask-enabled browser.");return}
+ try{
+  btn.disabled=true;btn.textContent="Connecting...";setStatus("Opening MetaMask...");
+  provider=new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts",[]);
+  let network=await provider.getNetwork();
+  if(network.chainId!==11155111n){
+   setStatus("Switching to Sepolia...");
+   try{
+    await window.ethereum.request({method:"wallet_switchEthereumChain",params:[{chainId:CONFIG.CHAIN_ID_HEX}]});
+   }catch(e){
+    if(e.code===4902){
+     await window.ethereum.request({method:"wallet_addEthereumChain",params:[{
+      chainId:CONFIG.CHAIN_ID_HEX,chainName:"Sepolia",
+      nativeCurrency:{name:"Sepolia Ether",symbol:"ETH",decimals:18},
+      rpcUrls:[CONFIG.RPC_URL],blockExplorerUrls:["https://sepolia.etherscan.io"]
+     }]});
+    }else{throw e}
+   }
+   provider=new ethers.BrowserProvider(window.ethereum);
   }
-  try{
-    provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send('eth_requestAccounts', []);
-
-    // ensure correct chain
-    const network = await provider.getNetwork();
-    if('0x'+network.chainId.toString(16) !== CONFIG.CHAIN_ID_HEX){
-      try{
-        await window.ethereum.request({
-          method:'wallet_switchEthereumChain',
-          params:[{chainId: CONFIG.CHAIN_ID_HEX}]
-        });
-      }catch(e){
-        setStatus('Please switch your wallet to the correct network.');
-      }
-    }
-
-    signer = await provider.getSigner();
-    userAddress = await signer.getAddress();
-    contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, ABI, signer);
-
-    document.getElementById('connectBtn').textContent =
-      userAddress.slice(0,6)+'...'+userAddress.slice(-4);
-    setStatus('Wallet connected.');
-    loadTokens();
-  }catch(err){
-    console.error(err);
-    setStatus('Connection failed: '+(err.message||err));
-  }
+  const finalNetwork=await provider.getNetwork();
+  if(finalNetwork.chainId!==11155111n) throw new Error("Please switch MetaMask to Sepolia.");
+  signer=await provider.getSigner();userAddress=await signer.getAddress();
+  contract=new ethers.Contract(CONFIG.CONTRACT_ADDRESS,ABI,signer);
+  btn.textContent=userAddress.slice(0,6)+"..."+userAddress.slice(-4);btn.disabled=false;
+  setStatus("Wallet connected to Sepolia.");
+  await loadTokens();
+ }catch(err){
+  console.error(err);btn.disabled=false;btn.textContent="Connect Wallet";
+  if(err.code===4001)setStatus("Connection rejected in MetaMask.");
+  else if(err.code===-32002)setStatus("MetaMask already has a request open. Check MetaMask.");
+  else setStatus("Connection failed: "+(err.shortMessage||err.message||"Unknown error"));
+ }
 }
-
 async function loadTokens(){
-  if(!contract){
-    setStatus('Connect your wallet first.');
-    return;
-  }
-  const listEl = document.getElementById('tokenList');
-  listEl.innerHTML = '<div class="muted">Loading tokens...</div>';
-  try{
-    const count = await contract.tokenCount();
-    let html = '';
-    for(let i=0; i<Number(count); i++){
-      const info = await contract.getToken(i);
-      const price = await contract.currentPrice(i);
-      html += renderTokenCard(i, info, price);
-    }
-    listEl.innerHTML = html || '<div class="muted">No tokens launched yet. Be the first — go to Create.</div>';
-    attachTradeHandlers();
-  }catch(err){
-    console.error(err);
-    listEl.innerHTML = '<div class="muted">Could not load tokens. Check CONFIG.CONTRACT_ADDRESS.</div>';
-  }
+ if(!contract){setStatus("Connect your wallet first.");return}
+ const listEl=document.getElementById("tokenList");listEl.innerHTML='<div class="muted">Loading tokens...</div>';
+ try{
+  const count=await contract.tokenCount();let html="";
+  for(let i=0;i<Number(count);i++){const info=await contract.getToken(i);const price=await contract.currentPrice(i);html+=renderTokenCard(i,info,price)}
+  listEl.innerHTML=html||'<div class="muted">No tokens launched yet. Be the first — go to Create.</div>';attachTradeHandlers();
+ }catch(err){console.error(err);listEl.innerHTML='<div class="muted">Could not load tokens. Check the contract address and Sepolia network.</div>'}
 }
-
-function renderTokenCard(id, info, price){
-  const pct = info.curveSupply > 0n ? Number(info.sold*10000n/info.curveSupply)/100 : 0;
-  return `
-  <div class="card">
-    <div class="row">
-      <div>
-        <strong>#${id} — ${info.token.slice(0,6)}...${info.token.slice(-4)}</strong>
-        <span class="pill ${info.graduated?'graduated':''}">${info.graduated?'Graduated':'On curve'}</span>
-      </div>
-      <div class="muted">${ethers.formatEther(price)} native / token</div>
-    </div>
-    <div class="muted" style="margin-top:6px;">Sold ${pct}% of curve supply · Reserve ${ethers.formatEther(info.reserveBalance)}</div>
-    <div class="grid2" style="margin-top:12px;">
-      <div>
-        <input type="text" class="amt-buy" data-id="${id}" placeholder="Amount to buy" />
-        <button class="btn-green trade-buy" data-id="${id}" style="width:100%;margin-top:6px;">Buy</button>
-      </div>
-      <div>
-        <input type="text" class="amt-sell" data-id="${id}" placeholder="Amount to sell" />
-        <button class="btn-red trade-sell" data-id="${id}" style="width:100%;margin-top:6px;">Sell</button>
-      </div>
-    </div>
-  </div>`;
+function renderTokenCard(id,info,price){
+ const pct=info.curveSupply>0n?Number(info.sold*10000n/info.curveSupply)/100:0;
+ return `<div class="card"><div class="row"><div><strong>#${id} — ${info.token.slice(0,6)}...${info.token.slice(-4)}</strong> <span class="pill ${info.graduated?"graduated":""}">${info.graduated?"Graduated":"On curve"}</span></div><div class="muted">${ethers.formatEther(price)} native / token</div></div>
+ <div class="muted" style="margin-top:6px">Sold ${pct}% of curve supply · Reserve ${ethers.formatEther(info.reserveBalance)}</div>
+ <div class="grid2" style="margin-top:12px"><div><input type="text" class="amt-buy" data-id="${id}" placeholder="Amount to buy"><button class="btn-green trade-buy" data-id="${id}" style="width:100%;margin-top:6px">Buy</button></div>
+ <div><input type="text" class="amt-sell" data-id="${id}" placeholder="Amount to sell"><button class="btn-red trade-sell" data-id="${id}" style="width:100%;margin-top:6px">Sell</button></div></div></div>`;
 }
-
 function attachTradeHandlers(){
-  document.querySelectorAll('.trade-buy').forEach(btn=>{
-    btn.addEventListener('click', ()=>buyToken(btn.dataset.id));
-  });
-  document.querySelectorAll('.trade-sell').forEach(btn=>{
-    btn.addEventListener('click', ()=>sellToken(btn.dataset.id));
-  });
+ document.querySelectorAll(".trade-buy").forEach(btn=>btn.addEventListener("click",()=>buyToken(btn.dataset.id)));
+ document.querySelectorAll(".trade-sell").forEach(btn=>btn.addEventListener("click",()=>sellToken(btn.dataset.id)));
 }
-
 async function buyToken(id){
-  const input = document.querySelector(`.amt-buy[data-id="${id}"]`);
-  const amount = ethers.parseUnits(input.value || '0', 18);
-  if(amount === 0n){ setStatus('Enter an amount.'); return; }
-  try{
-    setStatus('Quoting price...');
-    const cost = await contract.quoteBuy(id, amount);
-    const maxCost = cost * 105n / 100n; // 5% slippage buffer
-    setStatus('Confirm the transaction in your wallet...');
-    const tx = await contract.buy(id, amount, maxCost, {value: maxCost});
-    setStatus('Waiting for confirmation...');
-    await tx.wait();
-    setStatus('Bought successfully.');
-    loadTokens();
-  }catch(err){
-    console.error(err);
-    setStatus('Buy failed: '+(err.shortMessage||err.message||err));
-  }
+ const input=document.querySelector(`.amt-buy[data-id="${id}"]`);const amount=ethers.parseUnits(input.value||"0",18);
+ if(amount===0n){setStatus("Enter an amount.");return}
+ try{setStatus("Quoting price...");const cost=await contract.quoteBuy(id,amount);const maxCost=cost*105n/100n;setStatus("Confirm the transaction in your wallet...");
+ const tx=await contract.buy(id,amount,maxCost,{value:maxCost});setStatus("Waiting for confirmation...");await tx.wait();setStatus("Bought successfully.");loadTokens()
+ }catch(err){console.error(err);setStatus("Buy failed: "+(err.shortMessage||err.message||err))}
 }
-
 async function sellToken(id){
-  const input = document.querySelector(`.amt-sell[data-id="${id}"]`);
-  const amount = ethers.parseUnits(input.value || '0', 18);
-  if(amount === 0n){ setStatus('Enter an amount.'); return; }
-  try{
-    const info = await contract.getToken(id);
-    const token = new ethers.Contract(info.token, ERC20_ABI, signer);
-
-    const allowance = await token.allowance(userAddress, CONFIG.CONTRACT_ADDRESS);
-    if(allowance < amount){
-      setStatus('Approving token spend...');
-      const approveTx = await token.approve(CONFIG.CONTRACT_ADDRESS, amount);
-      await approveTx.wait();
-    }
-
-    setStatus('Quoting payout...');
-    const payout = await contract.quoteSell(id, amount);
-    const minPayout = payout * 95n / 100n; // 5% slippage buffer
-
-    setStatus('Confirm the transaction in your wallet...');
-    const tx = await contract.sell(id, amount, minPayout);
-    setStatus('Waiting for confirmation...');
-    await tx.wait();
-    setStatus('Sold successfully.');
-    loadTokens();
-  }catch(err){
-    console.error(err);
-    setStatus('Sell failed: '+(err.shortMessage||err.message||err));
-  }
+ const input=document.querySelector(`.amt-sell[data-id="${id}"]`);const amount=ethers.parseUnits(input.value||"0",18);
+ if(amount===0n){setStatus("Enter an amount.");return}
+ try{const info=await contract.getToken(id);const token=new ethers.Contract(info.token,ERC20_ABI,signer);const allowance=await token.allowance(userAddress,CONFIG.CONTRACT_ADDRESS);
+ if(allowance<amount){setStatus("Approving token spend...");const approveTx=await token.approve(CONFIG.CONTRACT_ADDRESS,amount);await approveTx.wait()}
+ setStatus("Quoting payout...");const payout=await contract.quoteSell(id,amount);const minPayout=payout*95n/100n;setStatus("Confirm the transaction in your wallet...");
+ const tx=await contract.sell(id,amount,minPayout);setStatus("Waiting for confirmation...");await tx.wait();setStatus("Sold successfully.");loadTokens()
+ }catch(err){console.error(err);setStatus("Sell failed: "+(err.shortMessage||err.message||err))}
 }
-
 async function createToken(){
-  const name = document.getElementById('c_name').value.trim();
-  const symbol = document.getElementById('c_symbol').value.trim();
-  const total = document.getElementById('c_total').value.trim();
-  const curve = document.getElementById('c_curve').value.trim();
-  const base = document.getElementById('c_base').value.trim();
-  const slope = document.getElementById('c_slope').value.trim();
-  const statusEl2 = document.getElementById('createStatus');
-
-  if(!contract){ statusEl2.textContent = 'Connect your wallet first.'; return; }
-  if(!name || !symbol || !total || !curve || !base || !slope){
-    statusEl2.textContent = 'Fill in every field.'; return;
-  }
-
-  try{
-    statusEl2.textContent = 'Confirm the transaction in your wallet...';
-    const tx = await contract.createToken(
-      name, symbol,
-      ethers.parseUnits(total, 18),
-      ethers.parseUnits(curve, 18),
-      BigInt(base),
-      BigInt(slope)
-    );
-    statusEl2.textContent = 'Waiting for confirmation...';
-    const receipt = await tx.wait();
-    statusEl2.textContent = 'Token launched!';
-    document.querySelector('.tab[data-tab="explore"]').click();
-    loadTokens();
-  }catch(err){
-    console.error(err);
-    statusEl2.textContent = 'Launch failed: '+(err.shortMessage||err.message||err);
-  }
+ const name=document.getElementById("c_name").value.trim(),symbol=document.getElementById("c_symbol").value.trim(),total=document.getElementById("c_total").value.trim(),curve=document.getElementById("c_curve").value.trim(),base=document.getElementById("c_base").value.trim(),slope=document.getElementById("c_slope").value.trim(),statusEl2=document.getElementById("createStatus");
+ if(!contract){statusEl2.textContent="Connect your wallet first.";return}
+ if(!name||!symbol||!total||!curve||!base||!slope){statusEl2.textContent="Fill in every field.";return}
+ try{statusEl2.textContent="Confirm the transaction in your wallet...";
+ const tx=await contract.createToken(name,symbol,ethers.parseUnits(total,18),ethers.parseUnits(curve,18),BigInt(base),BigInt(slope));
+ statusEl2.textContent="Waiting for confirmation...";await tx.wait();statusEl2.textContent="Token launched!";document.querySelector('.tab[data-tab="explore"]').click();loadTokens()
+ }catch(err){console.error(err);statusEl2.textContent="Launch failed: "+(err.shortMessage||err.message||err))}
 }
-
-window.addEventListener('load', ()=>{
-  if(window.ethereum){
-    window.ethereum.on?.('accountsChanged', ()=>window.location.reload());
-    window.ethereum.on?.('chainChanged', ()=>window.location.reload());
-  }
+window.addEventListener("load",()=>{
+ if(window.ethereum){
+  window.ethereum.on?.("accountsChanged",()=>window.location.reload());
+  window.ethereum.on?.("chainChanged",()=>window.location.reload());
+ }
 });
 </script>
 </body>
