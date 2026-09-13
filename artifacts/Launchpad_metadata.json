@@ -1,0 +1,577 @@
+{
+	"compiler": {
+		"version": "0.8.26+commit.8a97fa7a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_protocolFeeRecipient",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "buyer",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amountTokens",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "costWei",
+						"type": "uint256"
+					}
+				],
+				"name": "Buy",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "finalReserve",
+						"type": "uint256"
+					}
+				],
+				"name": "Graduated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "seller",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amountTokens",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "payoutWei",
+						"type": "uint256"
+					}
+				],
+				"name": "Sell",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "creator",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "string",
+						"name": "symbol",
+						"type": "string"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "totalSupply",
+						"type": "uint256"
+					}
+				],
+				"name": "TokenCreated",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "CREATOR_FEE_BPS",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "GRADUATION_THRESHOLD",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "PROTOCOL_FEE_BPS",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxCostWei",
+						"type": "uint256"
+					}
+				],
+				"name": "buy",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "name_",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "symbol_",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "totalSupply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "curveSupply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "basePrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "slope",
+						"type": "uint256"
+					}
+				],
+				"name": "createToken",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "address",
+						"name": "tokenAddr",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "currentPrice",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "getToken",
+				"outputs": [
+					{
+						"components": [
+							{
+								"internalType": "address",
+								"name": "token",
+								"type": "address"
+							},
+							{
+								"internalType": "address",
+								"name": "creator",
+								"type": "address"
+							},
+							{
+								"internalType": "uint256",
+								"name": "curveSupply",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "sold",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "reserveBalance",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "basePrice",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "slope",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "graduated",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct Launchpad.TokenInfo",
+						"name": "",
+						"type": "tuple"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "protocolFeeRecipient",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "quoteBuy",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "cost",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "quoteSell",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "payout",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "minPayoutWei",
+						"type": "uint256"
+					}
+				],
+				"name": "sell",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "tokenCount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "tokenIdOf",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"name": "tokens",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "token",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "creator",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "curveSupply",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "sold",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reserveBalance",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "basePrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "slope",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "graduated",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					}
+				],
+				"name": "withdrawGraduated",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"createToken(string,string,uint256,uint256,uint256,uint256)": {
+					"params": {
+						"curveSupply": "how much of that supply is sold via the bonding curve        (the rest stays with the creator, e.g. for a team allocation)",
+						"totalSupply": "full fixed supply of the new token (18 decimals)"
+					}
+				}
+			},
+			"title": "Launchpad",
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {
+				"currentPrice(uint256)": {
+					"notice": "price (wei) for the NEXT whole token, given `sold` already sold"
+				},
+				"quoteBuy(uint256,uint256)": {
+					"notice": "quote the total wei cost to buy `amount` tokens (18-decimals) right now"
+				},
+				"quoteSell(uint256,uint256)": {
+					"notice": "quote the total wei payout for selling `amount` tokens right now"
+				},
+				"withdrawGraduated(uint256)": {
+					"notice": "after graduation, the creator withdraws the raised reserve to         seed liquidity on a real DEX of their choice"
+				}
+			},
+			"notice": "Anyone can launch a fixed-supply token. Every token starts life on a         linear bonding curve held by this contract: buyers send native coin         (ETH/MATIC/etc depending on chain) in, tokens come out, priced by how         much of the curve supply has already been sold. Selling reverses it.         Once a token's raised reserve crosses GRADUATION_THRESHOLD, trading on         the curve is frozen (\"graduated\") and the remaining reserve + unsold         tokens are left for the creator to seed a real DEX pool manually.",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/1.launchpad.sol": "Launchpad"
+		},
+		"evmVersion": "cancun",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/1.launchpad.sol": {
+			"keccak256": "0x7705a14c61727e1ef183bc8d089a572b293213172e77e405ecb2492de79e8b99",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://9e74ae8846f0ba91c80c2c7463e1ce5bdeed4b55e93a004563bdedda5124e09a",
+				"dweb:/ipfs/QmZFahNzFYfvD3dtt49Pjg5LuuupbKhmL7XcGPKBpbcHqf"
+			]
+		}
+	},
+	"version": 1
+}
